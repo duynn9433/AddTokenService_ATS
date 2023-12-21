@@ -1,5 +1,6 @@
 package com.viettel.vtnet.addtokenservice.common;
 
+<<<<<<< HEAD
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
@@ -28,4 +29,8 @@ public class HMACUtil {
     }
     return hexString.toString();
   }
+=======
+public class HMACUtil {
+
+>>>>>>> a7d5f61 (Initial commit)
 }

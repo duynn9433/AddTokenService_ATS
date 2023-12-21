@@ -3,6 +3,7 @@ package com.viettel.vtnet.addtokenservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+<<<<<<< HEAD
 import javax.net.ssl.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -59,4 +60,13 @@ public class AddTokenServiceApplication {
       e.printStackTrace();
     }
   }
+=======
+@SpringBootApplication
+public class AddTokenServiceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(AddTokenServiceApplication.class, args);
+	}
+
+>>>>>>> a7d5f61 (Initial commit)
 }

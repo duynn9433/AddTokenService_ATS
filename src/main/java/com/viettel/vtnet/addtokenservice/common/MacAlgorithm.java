@@ -1,7 +1,5 @@
 package com.viettel.vtnet.addtokenservice.common;
 
-import java.security.Provider;
-import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,4 +28,5 @@ public enum MacAlgorithm {
   MacAlgorithm(int algorithmNumber) {
     this.algorithmNumber = algorithmNumber;
   }
+
 }

@@ -59,6 +59,4 @@ public class UrlUtil {
         + "&K=" + keyNumber
         + "&P=0011&";
   }
-
-
 }

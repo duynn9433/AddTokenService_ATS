@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class AddTokenServiceApplicationTests {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   @Test
   void contextLoads() {
   }
@@ -15,5 +16,10 @@ class AddTokenServiceApplicationTests {
 	void contextLoads() {
 	}
 >>>>>>> a7d5f61 (Initial commit)
+=======
+  @Test
+  void contextLoads() {
+  }
+>>>>>>> 6764d70 (save)
 
 }

@@ -28,5 +28,4 @@ public enum MacAlgorithm {
   MacAlgorithm(int algorithmNumber) {
     this.algorithmNumber = algorithmNumber;
   }
-
 }

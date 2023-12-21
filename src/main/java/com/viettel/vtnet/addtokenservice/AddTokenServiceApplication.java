@@ -64,9 +64,9 @@ public class AddTokenServiceApplication {
 @SpringBootApplication
 public class AddTokenServiceApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(AddTokenServiceApplication.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(AddTokenServiceApplication.class, args);
+  }
 
 >>>>>>> a7d5f61 (Initial commit)
 }

@@ -8,7 +8,6 @@ import static com.viettel.vtnet.addtokenservice.common.UrlUtil.isHaveHttpSchema;
 import com.viettel.vtnet.addtokenservice.common.HMACUtil;
 import com.viettel.vtnet.addtokenservice.common.MacAlgorithm;
 import io.lindstrom.m3u8.model.*;
-
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -79,6 +78,7 @@ public class RewriteManifestService {
     List<MediaSegment> updatedSegments = new ArrayList<>();
     for (int i = 0; i < segments.size(); i++) {
       MediaSegment segment = segments.get(i);
+
       //hash
       String urlWithToken = generateUrl(originUrl, segment.uri(), expiration, uid, keyNumber, macAlgorithm, true);
       //end-hash

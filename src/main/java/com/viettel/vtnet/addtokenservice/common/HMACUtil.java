@@ -1,6 +1,9 @@
 package com.viettel.vtnet.addtokenservice.common;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6764d70 (save)
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
@@ -29,8 +32,11 @@ public class HMACUtil {
     }
     return hexString.toString();
   }
+<<<<<<< HEAD
 =======
 public class HMACUtil {
 
 >>>>>>> a7d5f61 (Initial commit)
+=======
+>>>>>>> 6764d70 (save)
 }

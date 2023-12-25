@@ -1,59 +1,46 @@
 package com.viettel.vtnet.addtokenservice.service;
 
+import static com.viettel.vtnet.addtokenservice.common.UrlUtil.concatHttpsSchema;
+import static com.viettel.vtnet.addtokenservice.common.UrlUtil.generateInfoForUrlSignPlugin;
+import static com.viettel.vtnet.addtokenservice.common.UrlUtil.getUrlPrefixHaveSchemaForUrlSigPlugin;
+import static com.viettel.vtnet.addtokenservice.common.UrlUtil.isHaveHttpSchema;
+
 import com.viettel.vtnet.addtokenservice.common.HMACUtil;
 import com.viettel.vtnet.addtokenservice.common.MacAlgorithm;
 import io.lindstrom.m3u8.model.MasterPlaylist;
 import io.lindstrom.m3u8.model.MediaPlaylist;
 import io.lindstrom.m3u8.model.MediaSegment;
 import io.lindstrom.m3u8.model.Variant;
-import io.lindstrom.m3u8.parser.MasterPlaylistParser;
-import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 @Service
 public class RewriteManifestService {
 
-  public static void main(String[] args)
-      throws IOException, NoSuchAlgorithmException, InvalidKeyException {
-    String masterUrl = "https://cdnvt.net/hls-stream/test/master.m3u8";
-    String mediaUrl = "https://cdnvt.net/hls-stream/test/144p_index.m3u8";
-    MasterPlaylist masterPlaylist = new RewriteManifestService().rewriteMasterPlaylist(
-        new GetDataFromOriginService()
-            .getMasterPlaylistFromOrigin(masterUrl),"uid",30,1,MacAlgorithm.HmacSHA1);
-    System.out.println(new MasterPlaylistParser().writePlaylistAsString(masterPlaylist));
-    MediaPlaylist mediaPlaylist = new RewriteManifestService().rewriteMediaPlaylist("urlPrefix",
-        new GetDataFromOriginService()
-            .getMediaPlaylistFromOrigin(mediaUrl),"uid",30,1,MacAlgorithm.HmacSHA1);
-    System.out.println(new MasterPlaylistParser().writePlaylistAsString(masterPlaylist));
+  private Environment env;
+
+  public RewriteManifestService(Environment env) {
+    this.env = env;
   }
+
   public MasterPlaylist rewriteMasterPlaylist(
       MasterPlaylist originMasterPlaylist,
       String uid,
-      long expiration,
+      Long expiration,
       int keyNumber,
-      MacAlgorithm macAlgorithm)
-      throws NoSuchAlgorithmException, InvalidKeyException {
+      MacAlgorithm macAlgorithm) {
     List<Variant> variants = originMasterPlaylist.variants();
     List<Variant> updatedVariants = new ArrayList<>();
     for (int i = 0; i < variants.size(); i++) {
       Variant v = variants.get(i);
-      StringBuilder sb = new StringBuilder(v.uri());
-//      long timestamp = System.currentTimeMillis() + expiration;
-      sb.append('?')
-          .append("timestamp=").append(expiration)
-          .append('&').append("uid=").append(uid);
       //hash
-      String infoUrlSignPlugin = generateInfoForUrlSignPlugin(expiration, macAlgorithm, keyNumber);
-      sb.append(infoUrlSignPlugin);
-      sb.append("&S=");
-      String data = sb.toString();
-      sb.append(generateToken(data, keyNumber, macAlgorithm));
+      String urlWithToken = generateUrl("originUrl", v.uri(), expiration, uid, keyNumber, macAlgorithm);
       //end-hash
-      Variant updatedVariant = Variant.builder().from(v).uri(sb.toString()).build();
+      Variant updatedVariant = Variant.builder().from(v).uri(urlWithToken).build();
       updatedVariants.add(updatedVariant);
     }
     return MasterPlaylist.builder().from(originMasterPlaylist).variants(updatedVariants).build();
@@ -65,46 +52,68 @@ public class RewriteManifestService {
       String uid,
       long expiration,
       int keyNumber,
-      MacAlgorithm macAlgorithm) throws NoSuchAlgorithmException, InvalidKeyException {
+      MacAlgorithm macAlgorithm){
     List<MediaSegment> segments = originMediaPlaylist.mediaSegments();
     List<MediaSegment> updatedSegments = new ArrayList<>();
     for (int i = 0; i < segments.size(); i++) {
       MediaSegment segment = segments.get(i);
-      StringBuilder sb = new StringBuilder(segment.uri());
-//      long timestamp = System.currentTimeMillis() + expiration;
-      sb.append('?')
-          .append("timestamp=").append(expiration)
-          .append('&').append("uid=").append(uid);
       //hash
-      String infoUrlSignPlugin = generateInfoForUrlSignPlugin(expiration, macAlgorithm, keyNumber);
-      sb.append(infoUrlSignPlugin);
-      sb.append("&S=");
-      //check if have schema http/https
-      //if have -> remove
-
-      //if no -> add urlprefix
-      String data = sb.toString();
-      sb.append(generateToken(data, keyNumber, macAlgorithm));
+      String urlWithToken = generateUrl("originUrl", segment.uri(), expiration, uid, keyNumber, macAlgorithm);
       //end-hash
-      MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment).uri(sb.toString()).build();
+      MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment).uri(urlWithToken)
+          .build();
       updatedSegments.add(updatedMediaSegment);
     }
     return MediaPlaylist.builder().from(originMediaPlaylist).mediaSegments(updatedSegments).build();
   }
 
-  private String generateInfoForUrlSignPlugin(long expiration, MacAlgorithm macAlgorithm, int keyNumber) {
-    return "&E=" + expiration
-        + "&A=" + macAlgorithm.algorithmNumber
-        + "&K=" + keyNumber
-        + "&P=1";
+  private String generateUrl(String originUrl, String urlInM3u8, long expiration, String uid,
+      int keyNumber, MacAlgorithm macAlgorithm){
+
+    StringBuilder sb = new StringBuilder(urlInM3u8);
+    boolean isHaveHttpSchema = isHaveHttpSchema(urlInM3u8);
+    //check if have schema http/https
+    if (isHaveHttpSchema) {
+      //remove schema
+      sb.delete(0, sb.indexOf(":") + 3);
+    } else {
+      String urlPrefix = getUrlPrefixHaveSchemaForUrlSigPlugin(urlInM3u8);
+      //add urlprefix
+      if (urlPrefix != null) {
+        sb.insert(0, urlPrefix);
+      } else {
+        //TODO: get prefix from origin url (verify info)
+
+      }
+    }
+//      long timestamp = System.currentTimeMillis() + expiration;
+    sb.append('?')
+//        .append("timestamp=").append(expiration).append('&')
+        .append("uid=").append(uid);
+    //hash
+    String infoUrlSignPlugin = generateInfoForUrlSignPlugin(expiration, macAlgorithm, keyNumber);
+    sb.append(infoUrlSignPlugin);
+    sb.append("&S=");
+
+    String data = sb.toString();
+    sb.append(generateToken(data, keyNumber, macAlgorithm));
+    //TODO: get prefix from origin url (verify info) -> remove concat
+    if(isHaveHttpSchema){
+      return concatHttpsSchema(sb.toString());
+    } else {
+      return sb.toString();
+    }
   }
 
-  private String generateToken(String data, int keyNumber, MacAlgorithm algorithm)
-      throws NoSuchAlgorithmException, InvalidKeyException {
+  private String generateToken(String data, int keyNumber, MacAlgorithm algorithm) {
     //get key
-    String key = "key123";
+    String key = env.getProperty("url_sig.key" + keyNumber);
     //generate token
-    return HMACUtil.hmacWithJava(algorithm, data,key);
-
+    assert key != null;
+    try {
+      return HMACUtil.hmacWithJava(algorithm, data, key);
+    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

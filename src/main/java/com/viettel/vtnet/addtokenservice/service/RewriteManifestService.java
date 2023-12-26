@@ -121,6 +121,7 @@ public class RewriteManifestService {
       sb.delete(0, sb.indexOf(":") + 3);
     } else {
       String urlPrefix = getUrlPrefixHaveSchemaForUrlSigPlugin(originUrl);
+<<<<<<< HEAD
       //remove master.m3u8
 
       originUrlSb.delete(originUrlSb.lastIndexOf("/") , originUrlSb.length()+1);
@@ -129,6 +130,8 @@ public class RewriteManifestService {
 //        //remove segment
 //        originUrlSb.delete(originUrlSb.lastIndexOf("/") , originUrlSb.length()+1);
 //      }
+=======
+>>>>>>> 50a9ca8 (save)
       //add urlprefix
       if (urlPrefix != null) {
         sb.insert(0,'/');

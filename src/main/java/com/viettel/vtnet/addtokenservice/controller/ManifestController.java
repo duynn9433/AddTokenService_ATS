@@ -35,6 +35,7 @@ public class ManifestController {
   }
 
 
+<<<<<<< HEAD
   @GetMapping(value = "/**/{filename}.m3u8", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<?> getM3U8File(HttpServletRequest request, HttpServletResponse response,
      @PathVariable String filename,
@@ -43,6 +44,23 @@ public class ManifestController {
      @RequestParam(required = false, defaultValue = "1") int key,
      @RequestParam(required = false, defaultValue = "1") int algo) {
     log.info("getMediaPlaylist: " + request.getRequestURL().toString());
+=======
+  @GetMapping("/fake.ts")
+  public ResponseEntity<?> getFakeTs() {
+    return ResponseEntity.ok("fake.ts");
+  }
+
+  @GetMapping(value = "/{type}/{env}/{source}",
+      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+  public ResponseEntity<?> getPlaylist(HttpServletRequest request, HttpServletResponse response,
+      @PathVariable String type,
+      @PathVariable String env,
+      @PathVariable String source) {
+    String orignUrl = request.getRequestURL().toString();
+//    System.out.println(orignUrl);
+    String url = environment.getProperty("netCDN.origin") + "/" + type + "/" + env + "/" + source;
+//    System.out.println(url);
+>>>>>>> 50a9ca8 (save)
 
     String orignURI = request.getRequestURI();
     orignURI = orignURI.substring(1);
@@ -60,17 +78,28 @@ public class ManifestController {
       //master
       MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
       masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
+<<<<<<< HEAD
               masterPlaylist,
               hashURI ,
               uid, timestamp, key, algorithm);
+=======
+          masterPlaylist,
+          request.getRequestURI() ,
+          uid, timestamp, K, A);
+>>>>>>> 50a9ca8 (save)
       MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
       return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
     } else if(getDataFromOriginService.isMediaPlaylist(m3u8Data)) {
       //media
       MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
       mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
+<<<<<<< HEAD
               mediaPlaylist, hashURI,
               uid, timestamp, key, algorithm);
+=======
+          mediaPlaylist, "this version not use because in media playlist have full url",
+          uid, timestamp, K, A);
+>>>>>>> 50a9ca8 (save)
       MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();
       return ResponseEntity.ok(mediaPlaylistParser.writePlaylistAsBytes(mediaPlaylist));
     } else {

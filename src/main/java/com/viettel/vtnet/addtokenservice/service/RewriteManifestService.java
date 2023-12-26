@@ -29,6 +29,7 @@ public class RewriteManifestService {
 
   public MasterPlaylist rewriteMasterPlaylist(
       MasterPlaylist originMasterPlaylist,
+      String originUrl,
       String uid,
       Long expiration,
       int keyNumber,
@@ -47,8 +48,8 @@ public class RewriteManifestService {
   }
 
   public MediaPlaylist rewriteMediaPlaylist(
-      String urlPrefix,
       MediaPlaylist originMediaPlaylist,
+      String originUrl,
       String uid,
       long expiration,
       int keyNumber,
@@ -67,6 +68,25 @@ public class RewriteManifestService {
     return MediaPlaylist.builder().from(originMediaPlaylist).mediaSegments(updatedSegments).build();
   }
 
+  /**
+   * generate token for Url_sig plugin
+   * 2 case: <br>
+   * 1. master playlist: <br>
+   * urlInM3u8: 144p_index.m3u8 <br>
+   * 2. media playlist: <br>
+   * urlInM3u8: https://cdnvt.net/hls-stream/test/144p_segment13102.ts <br>
+   * <br>
+   * Example data for Url_sig plugin: <br>
+   * cdnvt.net/hls-stream/test/144p_segment13102.ts?timestamp=213&uid=uid123&E=1703155339&A=1&K=4&P=1&S=608baf47ce4d76be52eb6488bce29f9ea4cfc2ed
+   * <br>
+   * @param originUrl: origin url : http://192.168.122.32/foo/asdfasdf/adsf.m3u8?timestamp=213&uid=uid123&E=1703155339&A=1&K=4&P=1&S=608baf47ce4d76be52eb6488bce29f9ea4cfc2ed
+   * @param urlInM3u8: url in m3u8 file: 144p_index.m3u8 || https://cdnvt.net/hls-stream/test/144p_segment13102.ts
+   * @param expiration: time to live : 1703155339L
+   * @param uid: user id : uid123
+   * @param keyNumber: key number : 4
+   * @param macAlgorithm: algorithm : HmacSHA1
+   * <br>
+   * */
   private String generateUrl(String originUrl, String urlInM3u8, long expiration, String uid,
       int keyNumber, MacAlgorithm macAlgorithm){
 
@@ -77,7 +97,7 @@ public class RewriteManifestService {
       //remove schema
       sb.delete(0, sb.indexOf(":") + 3);
     } else {
-      String urlPrefix = getUrlPrefixHaveSchemaForUrlSigPlugin(urlInM3u8);
+      String urlPrefix = getUrlPrefixHaveSchemaForUrlSigPlugin(originUrl);
       //add urlprefix
       if (urlPrefix != null) {
         sb.insert(0, urlPrefix);

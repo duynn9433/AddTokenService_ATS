@@ -39,6 +39,11 @@ public class ManifestController {
     return ResponseEntity.ok("hello");
   }
 
+  @GetMapping("/fake.ts")
+  public ResponseEntity<?> getFakeTs() {
+    return ResponseEntity.ok("fake.ts");
+  }
+
   @GetMapping(value = "/{type}/{env}/{source}",
       produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<?> getPlaylist(HttpServletRequest request, HttpServletResponse response,
@@ -61,13 +66,18 @@ public class ManifestController {
     if(getDataFromOriginService.isMasterPlaylist(m3u8Data)) {
       //master
       MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
-      masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(masterPlaylist, uid, timestamp, K, A);
+      masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
+          masterPlaylist,
+          request.getRequestURI() ,
+          uid, timestamp, K, A);
       MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
       return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
     } else if(getDataFromOriginService.isMediaPlaylist(m3u8Data)) {
       //media
       MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
-      mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist("urlPrefix",mediaPlaylist, uid, timestamp, K, A);
+      mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
+          mediaPlaylist, "this version not use because in media playlist have full url",
+          uid, timestamp, K, A);
       MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();
       return ResponseEntity.ok(mediaPlaylistParser.writePlaylistAsBytes(mediaPlaylist));
     } else {

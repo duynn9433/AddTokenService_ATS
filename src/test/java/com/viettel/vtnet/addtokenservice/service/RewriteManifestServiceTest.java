@@ -25,26 +25,26 @@ class RewriteManifestServiceTest {
 
   @Test
   void rewriteMasterPlaylist() throws Exception {
-    String masterUrl = "https://cdnvt.net/hls-stream/test/master.m3u8";
-    MasterPlaylist originMasterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(masterUrl);
-    System.out.println("-------------origin master playlist-----------------");
-    System.out.println(new MasterPlaylistParser().writePlaylistAsString(originMasterPlaylist));
-    System.out.println("-------------rewrite master playlist-----------------");
-    MasterPlaylist masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
-        originMasterPlaylist,
-        "uid",30L,1, MacAlgorithm.HmacSHA1);
-    System.out.println(new MasterPlaylistParser().writePlaylistAsString(masterPlaylist));
+//    String masterUrl = "https://cdnvt.net/hls-stream/test/master.m3u8";
+//    MasterPlaylist originMasterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(masterUrl);
+//    System.out.println("-------------origin master playlist-----------------");
+//    System.out.println(new MasterPlaylistParser().writePlaylistAsString(originMasterPlaylist));
+//    System.out.println("-------------rewrite master playlist-----------------");
+//    MasterPlaylist masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
+//        originMasterPlaylist,
+//        "uid",30L,1, MacAlgorithm.HmacSHA1);
+//    System.out.println(new MasterPlaylistParser().writePlaylistAsString(masterPlaylist));
   }
 
   @Test
   void rewriteMediaPlaylist() throws Exception {
-    String mediaUrl = "https://cdnvt.net/hls-stream/test/144p_index.m3u8";
-    System.out.println("-------------origin media playlist-----------------");
-    MediaPlaylist originMediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(mediaUrl);
-    System.out.println(new MediaPlaylistParser().writePlaylistAsString(originMediaPlaylist));
-    System.out.println("-------------rewrite media playlist-----------------");
-    MediaPlaylist mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist("urlPrefix",
-        originMediaPlaylist,"uid",30,1,MacAlgorithm.HmacSHA1);
-    System.out.println(new MediaPlaylistParser().writePlaylistAsString(mediaPlaylist));
+//    String mediaUrl = "https://cdnvt.net/hls-stream/test/144p_index.m3u8";
+//    System.out.println("-------------origin media playlist-----------------");
+//    MediaPlaylist originMediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(mediaUrl);
+//    System.out.println(new MediaPlaylistParser().writePlaylistAsString(originMediaPlaylist));
+//    System.out.println("-------------rewrite media playlist-----------------");
+//    MediaPlaylist mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist("urlPrefix",
+//        originMediaPlaylist,"uid",30,1,MacAlgorithm.HmacSHA1);
+//    System.out.println(new MediaPlaylistParser().writePlaylistAsString(mediaPlaylist));
   }
 }

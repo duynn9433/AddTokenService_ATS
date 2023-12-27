@@ -39,7 +39,7 @@ public class RewriteManifestService {
     for (int i = 0; i < variants.size(); i++) {
       Variant v = variants.get(i);
       //hash
-      String urlWithToken = generateUrl("originUrl", v.uri(), expiration, uid, keyNumber, macAlgorithm);
+      String urlWithToken = generateUrl(originUrl, v.uri(), expiration, uid, keyNumber, macAlgorithm);
       //end-hash
       Variant updatedVariant = Variant.builder().from(v).uri(urlWithToken).build();
       updatedVariants.add(updatedVariant);
@@ -59,7 +59,7 @@ public class RewriteManifestService {
     for (int i = 0; i < segments.size(); i++) {
       MediaSegment segment = segments.get(i);
       //hash
-      String urlWithToken = generateUrl("originUrl", segment.uri(), expiration, uid, keyNumber, macAlgorithm);
+      String urlWithToken = generateUrl(originUrl, segment.uri(), expiration, uid, keyNumber, macAlgorithm);
       //end-hash
       MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment).uri(urlWithToken)
           .build();
@@ -92,15 +92,19 @@ public class RewriteManifestService {
 
     StringBuilder sb = new StringBuilder(urlInM3u8);
     boolean isHaveHttpSchema = isHaveHttpSchema(urlInM3u8);
+    int sizeOfUrlPrefix = 0; //for remove after generate token
     //check if have schema http/https
     if (isHaveHttpSchema) {
       //remove schema
       sb.delete(0, sb.indexOf(":") + 3);
     } else {
       String urlPrefix = getUrlPrefixHaveSchemaForUrlSigPlugin(originUrl);
+
       //add urlprefix
       if (urlPrefix != null) {
+        sb.insert(0,'/');
         sb.insert(0, urlPrefix);
+        sizeOfUrlPrefix = urlPrefix.length()+1;
       } else {
         //TODO: get prefix from origin url (verify info)
 
@@ -108,8 +112,8 @@ public class RewriteManifestService {
     }
 //      long timestamp = System.currentTimeMillis() + expiration;
     sb.append('?')
-//        .append("timestamp=").append(expiration).append('&')
-        .append("uid=").append(uid);
+        .append("uid=").append(uid)
+        .append("&timestamp=").append(expiration);
     //hash
     String infoUrlSignPlugin = generateInfoForUrlSignPlugin(expiration, macAlgorithm, keyNumber);
     sb.append(infoUrlSignPlugin);
@@ -121,7 +125,7 @@ public class RewriteManifestService {
     if(isHaveHttpSchema){
       return concatHttpsSchema(sb.toString());
     } else {
-      return sb.toString();
+      return sb.substring(sizeOfUrlPrefix);
     }
   }
 

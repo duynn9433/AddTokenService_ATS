@@ -9,9 +9,7 @@ import io.lindstrom.m3u8.parser.MasterPlaylistParser;
 import io.lindstrom.m3u8.parser.MediaPlaylistParser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,17 +47,17 @@ public class ManifestController {
   public ResponseEntity<?> getPlaylist(HttpServletRequest request, HttpServletResponse response,
       @PathVariable String type,
       @PathVariable String env,
-      @PathVariable String source) {
+      @PathVariable String source,
+      @RequestParam String uid,
+      @RequestParam Long timestamp,
+      @RequestParam(required = false, defaultValue = "1") int key,
+      @RequestParam(required = false, defaultValue = "1") int algo) {
     String orignUrl = request.getRequestURL().toString();
 //    System.out.println(orignUrl);
     String url = environment.getProperty("netCDN.origin") + "/" + type + "/" + env + "/" + source;
 //    System.out.println(url);
 
-    //TODO: real data
-    String uid = "123id";
-    Long timestamp = 1703496584L;
-    int K = 1;
-    MacAlgorithm A = MacAlgorithm.HmacSHA1;
+    MacAlgorithm algorithm = MacAlgorithm.getByAlgorithmNumber(algo);
     response.setHeader("Content-Disposition", "attachment; filename="+source);
 
     String m3u8Data = getDataFromOriginService.getDataFromOrigin(url);
@@ -68,8 +66,8 @@ public class ManifestController {
       MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
       masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
           masterPlaylist,
-          request.getRequestURI() ,
-          uid, timestamp, K, A);
+          orignUrl ,
+          uid, timestamp, key, algorithm);
       MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
       return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
     } else if(getDataFromOriginService.isMediaPlaylist(m3u8Data)) {
@@ -77,7 +75,7 @@ public class ManifestController {
       MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
       mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
           mediaPlaylist, "this version not use because in media playlist have full url",
-          uid, timestamp, K, A);
+          uid, timestamp, key, algorithm);
       MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();
       return ResponseEntity.ok(mediaPlaylistParser.writePlaylistAsBytes(mediaPlaylist));
     } else {

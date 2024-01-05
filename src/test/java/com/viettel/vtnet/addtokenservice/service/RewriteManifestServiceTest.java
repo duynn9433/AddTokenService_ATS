@@ -1,13 +1,5 @@
 package com.viettel.vtnet.addtokenservice.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import com.viettel.vtnet.addtokenservice.common.MacAlgorithm;
-import io.lindstrom.m3u8.model.MasterPlaylist;
-import io.lindstrom.m3u8.model.MediaPlaylist;
-import io.lindstrom.m3u8.parser.MasterPlaylistParser;
-import io.lindstrom.m3u8.parser.MediaPlaylistParser;
-import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +9,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 class RewriteManifestServiceTest {
+
   @Autowired
   RewriteManifestService rewriteManifestService;
   @Autowired

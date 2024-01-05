@@ -15,10 +15,12 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 @Service
+@Log4j2
 public class RewriteManifestService {
 
   private Environment env;
@@ -39,7 +41,7 @@ public class RewriteManifestService {
     for (int i = 0; i < variants.size(); i++) {
       Variant v = variants.get(i);
       //hash
-      String urlWithToken = generateUrl(originUrl, v.uri(), expiration, uid, keyNumber, macAlgorithm);
+      String urlWithToken = generateUrl(originUrl, v.uri(), expiration, uid, keyNumber, macAlgorithm, false);
       //end-hash
       Variant updatedVariant = Variant.builder().from(v).uri(urlWithToken).build();
       updatedVariants.add(updatedVariant);
@@ -47,6 +49,14 @@ public class RewriteManifestService {
     return MasterPlaylist.builder().from(originMasterPlaylist).variants(updatedVariants).build();
   }
 
+  public String urlWithoutPort(String originUrl){
+    String url = originUrl;
+    //example url http://117.1.157.113:9090/hls-stream/test/144p_index.m3u8
+    //remove :9090
+    int index = url.indexOf(":");
+
+    return url;
+  }
   public MediaPlaylist rewriteMediaPlaylist(
       MediaPlaylist originMediaPlaylist,
       String originUrl,
@@ -59,7 +69,7 @@ public class RewriteManifestService {
     for (int i = 0; i < segments.size(); i++) {
       MediaSegment segment = segments.get(i);
       //hash
-      String urlWithToken = generateUrl(originUrl, segment.uri(), expiration, uid, keyNumber, macAlgorithm);
+      String urlWithToken = generateUrl(originUrl, segment.uri(), expiration, uid, keyNumber, macAlgorithm, true);
       //end-hash
       MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment).uri(urlWithToken)
           .build();
@@ -88,9 +98,10 @@ public class RewriteManifestService {
    * <br>
    * */
   private String generateUrl(String originUrl, String urlInM3u8, long expiration, String uid,
-      int keyNumber, MacAlgorithm macAlgorithm){
+      int keyNumber, MacAlgorithm macAlgorithm, boolean isMediaPlaylist){
 
     StringBuilder sb = new StringBuilder(urlInM3u8);
+    StringBuilder originUrlSb = new StringBuilder(originUrl);
     boolean isHaveHttpSchema = isHaveHttpSchema(urlInM3u8);
     int sizeOfUrlPrefix = 0; //for remove after generate token
     //check if have schema http/https
@@ -99,7 +110,14 @@ public class RewriteManifestService {
       sb.delete(0, sb.indexOf(":") + 3);
     } else {
       String urlPrefix = getUrlPrefixHaveSchemaForUrlSigPlugin(originUrl);
+      //remove master.m3u8
 
+      originUrlSb.delete(originUrlSb.lastIndexOf("/") , originUrlSb.length()+1);
+
+//      if(isMediaPlaylist){
+//        //remove segment
+//        originUrlSb.delete(originUrlSb.lastIndexOf("/") , originUrlSb.length()+1);
+//      }
       //add urlprefix
       if (urlPrefix != null) {
         sb.insert(0,'/');
@@ -112,14 +130,14 @@ public class RewriteManifestService {
     }
 //      long timestamp = System.currentTimeMillis() + expiration;
     sb.append('?')
-        .append("uid=").append(uid)
-        .append("&timestamp=").append(expiration);
+//        .append("uid=").append(uid)
+        .append("timestamp=").append(expiration);
     //hash
     String infoUrlSignPlugin = generateInfoForUrlSignPlugin(expiration, macAlgorithm, keyNumber);
     sb.append(infoUrlSignPlugin);
     sb.append("&S=");
 
-    String data = sb.toString();
+    String data = originUrlSb.toString() + "/" + sb.toString();
     sb.append(generateToken(data, keyNumber, macAlgorithm));
     //TODO: get prefix from origin url (verify info) -> remove concat
     if(isHaveHttpSchema){
@@ -130,6 +148,7 @@ public class RewriteManifestService {
   }
 
   private String generateToken(String data, int keyNumber, MacAlgorithm algorithm) {
+    log.info("generateToken: " + data + " keyNumber: " + keyNumber + " algorithm: " + algorithm);
     //get key
     String key = env.getProperty("url_sig.key" + keyNumber);
     //generate token

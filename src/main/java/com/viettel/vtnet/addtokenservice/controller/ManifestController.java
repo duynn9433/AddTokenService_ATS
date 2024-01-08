@@ -34,17 +34,52 @@ public class ManifestController {
     this.rewriteManifestService = rewriteManifestService;
   }
 
-  @GetMapping("/")
-  public ResponseEntity<?> hello(){
-    return ResponseEntity.ok("hello");
+
+  @GetMapping(value = "/**/{filename}.m3u8", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+  public ResponseEntity<?> getM3U8File(HttpServletRequest request, HttpServletResponse response,
+     @PathVariable String filename,
+     @RequestParam(required = false) String uid,
+     @RequestParam Long timestamp,
+     @RequestParam(required = false, defaultValue = "1") int key,
+     @RequestParam(required = false, defaultValue = "1") int algo) {
+    log.info("getMediaPlaylist: " + request.getRequestURL().toString());
+
+    String orignUrl = request.getRequestURI();
+    orignUrl = orignUrl.substring(1);
+//    System.out.println(orignUrl);
+    String url = environment.getProperty("netCDN.origin") + "/" +orignUrl;
+//    System.out.println(url);
+
+    MacAlgorithm algorithm = MacAlgorithm.getByAlgorithmNumber(algo);
+    response.setHeader("Content-Disposition", "attachment; filename="+ filename + ".m3u8");
+    log.info("START get data from origin " + url);
+    String m3u8Data = getDataFromOriginService.getDataFromOrigin(url);
+    log.info("END get data from origin" + m3u8Data );
+    if(getDataFromOriginService.isMasterPlaylist(m3u8Data)) {
+      //master
+      MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
+      masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
+              masterPlaylist,
+              orignUrl ,
+              uid, timestamp, key, algorithm);
+      MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
+      return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
+    } else if(getDataFromOriginService.isMediaPlaylist(m3u8Data)) {
+      //media
+      MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
+      mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
+              mediaPlaylist, orignUrl,
+              uid, timestamp, key, algorithm);
+      MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();
+      return ResponseEntity.ok(mediaPlaylistParser.writePlaylistAsBytes(mediaPlaylist));
+    } else {
+      //TODO: not support
+      return ResponseEntity.badRequest().body("Not support");
+    }
   }
 
-  @GetMapping("/fake.ts")
-  public ResponseEntity<?> getFakeTs() {
-    return ResponseEntity.ok("fake.ts");
-  }
-  @GetMapping(value = "/{type}/{env}/{quality}/{source}",
-      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+//  @GetMapping(value = "/{type}/{env}/{quality}/{source}",
+//      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<?> getMediaPlaylist(HttpServletRequest request, HttpServletResponse response,
       @PathVariable String type,
       @PathVariable String env,
@@ -67,7 +102,16 @@ public class ManifestController {
     log.info("START get data from origin" + environment.getProperty("netCDN.origin"));
     String m3u8Data = getDataFromOriginService.getDataFromOrigin(url);
     log.info("END get data from origin" + environment.getProperty("netCDN.origin"));
-    if(getDataFromOriginService.isMediaPlaylist(m3u8Data)) {
+    if(getDataFromOriginService.isMasterPlaylist(m3u8Data)) {
+      //master
+      MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
+      masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
+              masterPlaylist,
+              orignUrl ,
+              uid, timestamp, key, algorithm);
+      MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
+      return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
+    } else if(getDataFromOriginService.isMediaPlaylist(m3u8Data)) {
       //media
       MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
       mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
@@ -81,8 +125,8 @@ public class ManifestController {
     }
 
   }
-  @GetMapping(value = "/{type}/{env}/{source}",
-      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+//  @GetMapping(value = "/{type}/{env}/{source}",
+//      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<?> getMasterPlaylist(HttpServletRequest request, HttpServletResponse response,
       @PathVariable String type,
       @PathVariable String env,

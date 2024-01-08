@@ -12,6 +12,11 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.print.attribute.standard.Media;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +41,20 @@ public class GetDataFromOriginService {
   public String getDataFromOrigin(String originUrl) {
     try {
       URL url = new URL(originUrl);
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+//      //TODO: run 1 time
+//      //no check certificate
+//      // Create a custom TrustManager that disables certificate validation
+//      TrustManager[] trustAllCerts = new TrustManager[]{new DisableCertificateValidation()};
+//
+//      // Create an SSLContext and initialize it with the custom TrustManager
+//      SSLContext sslContext = SSLContext.getInstance("TLS");
+//      sslContext.init(null, trustAllCerts, null);
+//
+//      // Set the default SSLContext to use your custom TrustManager
+//      HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+//      //--------------------------------
+      HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+
       BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
       StringBuilder stringBuilder = new StringBuilder();
       String line;

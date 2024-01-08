@@ -8,7 +8,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+<<<<<<< HEAD
 import javax.net.ssl.HttpsURLConnection;
+=======
+import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.print.attribute.standard.Media;
+>>>>>>> 46a6f09 (brk origin)
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,10 +44,28 @@ public class GetDataFromOriginService {
   public String getDataFromOrigin(String originUrl) {
     try {
       URL url = new URL(originUrl);
+<<<<<<< HEAD
       HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
       BufferedReader reader = new BufferedReader(
           new InputStreamReader(connection.getInputStream()));
+=======
+//      //TODO: run 1 time
+//      //no check certificate
+//      // Create a custom TrustManager that disables certificate validation
+//      TrustManager[] trustAllCerts = new TrustManager[]{new DisableCertificateValidation()};
+//
+//      // Create an SSLContext and initialize it with the custom TrustManager
+//      SSLContext sslContext = SSLContext.getInstance("TLS");
+//      sslContext.init(null, trustAllCerts, null);
+//
+//      // Set the default SSLContext to use your custom TrustManager
+//      HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+//      //--------------------------------
+      HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+
+      BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+>>>>>>> 46a6f09 (brk origin)
       StringBuilder stringBuilder = new StringBuilder();
       String line;
       while ((line = reader.readLine()) != null) {

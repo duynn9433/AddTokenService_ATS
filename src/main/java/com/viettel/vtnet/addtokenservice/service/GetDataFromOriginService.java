@@ -41,18 +41,6 @@ public class GetDataFromOriginService {
   public String getDataFromOrigin(String originUrl) {
     try {
       URL url = new URL(originUrl);
-//      //TODO: run 1 time
-//      //no check certificate
-//      // Create a custom TrustManager that disables certificate validation
-//      TrustManager[] trustAllCerts = new TrustManager[]{new DisableCertificateValidation()};
-//
-//      // Create an SSLContext and initialize it with the custom TrustManager
-//      SSLContext sslContext = SSLContext.getInstance("TLS");
-//      sslContext.init(null, trustAllCerts, null);
-//
-//      // Set the default SSLContext to use your custom TrustManager
-//      HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
-//      //--------------------------------
       HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
       BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));

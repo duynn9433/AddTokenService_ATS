@@ -7,10 +7,8 @@ import static com.viettel.vtnet.addtokenservice.common.UrlUtil.isHaveHttpSchema;
 
 import com.viettel.vtnet.addtokenservice.common.HMACUtil;
 import com.viettel.vtnet.addtokenservice.common.MacAlgorithm;
-import io.lindstrom.m3u8.model.MasterPlaylist;
-import io.lindstrom.m3u8.model.MediaPlaylist;
-import io.lindstrom.m3u8.model.MediaSegment;
-import io.lindstrom.m3u8.model.Variant;
+import io.lindstrom.m3u8.model.*;
+
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -36,6 +34,7 @@ public class RewriteManifestService {
       Long expiration,
       int keyNumber,
       MacAlgorithm macAlgorithm) {
+    //video-playlist
     List<Variant> variants = originMasterPlaylist.variants();
     List<Variant> updatedVariants = new ArrayList<>();
     for (int i = 0; i < variants.size(); i++) {
@@ -46,17 +45,29 @@ public class RewriteManifestService {
       Variant updatedVariant = Variant.builder().from(v).uri(urlWithToken).build();
       updatedVariants.add(updatedVariant);
     }
-    return MasterPlaylist.builder().from(originMasterPlaylist).variants(updatedVariants).build();
+    //end-video-playlist
+    //audio-playlist
+    List<AlternativeRendition> alternativeRenditionList = originMasterPlaylist.alternativeRenditions();
+    List<AlternativeRendition> updateARList = new ArrayList<>();
+    for(int i = 0; i < alternativeRenditionList.size(); i++ ){
+      AlternativeRendition ar = alternativeRenditionList.get(i);
+      //hash
+      String urlWithToken = "";
+      if(ar.uri().isPresent()) {
+        urlWithToken = generateUrl(originUrl, ar.uri().get(), expiration, uid, keyNumber, macAlgorithm, false);
+      }
+      //end-hash
+      AlternativeRendition updateAR = AlternativeRendition.builder().from(ar).uri(urlWithToken).build();
+      updateARList.add(updateAR);
+    }
+    //end-audio-playlist
+    originMasterPlaylist = MasterPlaylist.builder().from(originMasterPlaylist)
+            .variants(updatedVariants)
+            .alternativeRenditions(updateARList)
+            .build();
+    return originMasterPlaylist;
   }
 
-  public String urlWithoutPort(String originUrl){
-    String url = originUrl;
-    //example url http://117.1.157.113:9090/hls-stream/test/144p_index.m3u8
-    //remove :9090
-    int index = url.indexOf(":");
-
-    return url;
-  }
   public MediaPlaylist rewriteMediaPlaylist(
       MediaPlaylist originMediaPlaylist,
       String originUrl,

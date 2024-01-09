@@ -72,6 +72,10 @@ public class UrlUtil {
     return "E=" + expiration
         + "&A=" + macAlgorithm.algorithmNumber
         + "&K=" + keyNumber
+<<<<<<< HEAD
         + "&P=0011&";
+=======
+        + "&P=01&";
+>>>>>>> cb3b992 (remove timstamp for media playlist)
   }
 }

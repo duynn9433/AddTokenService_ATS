@@ -140,13 +140,16 @@ public class RewriteManifestService {
       }
     }
 //      long timestamp = System.currentTimeMillis() + expiration;
-    sb.append('?')
+    sb.append('?');
 //        .append("uid=").append(uid)
-        .append("timestamp=").append(expiration);
+    if(!isMediaPlaylist){
+      sb.append("timestamp=").append(expiration).append("&");
+    }
+
     //hash
     String infoUrlSignPlugin = generateInfoForUrlSignPlugin(expiration, macAlgorithm, keyNumber);
     sb.append(infoUrlSignPlugin);
-    sb.append("&S=");
+    sb.append("S=");
 
     String data = originUrlSb.toString() + "/" + sb.toString();
     sb.append(generateToken(data, keyNumber, macAlgorithm));

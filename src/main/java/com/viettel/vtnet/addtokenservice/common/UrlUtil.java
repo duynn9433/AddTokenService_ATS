@@ -54,10 +54,10 @@ public class UrlUtil {
   }
 
   public static String generateInfoForUrlSignPlugin(long expiration, MacAlgorithm macAlgorithm, int keyNumber) {
-    return "&E=" + expiration
+    return "E=" + expiration
         + "&A=" + macAlgorithm.algorithmNumber
         + "&K=" + keyNumber
-        + "&P=01";
+        + "&P=01&";
   }
 
 

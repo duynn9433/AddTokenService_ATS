@@ -57,7 +57,7 @@ public class UrlUtil {
     return "E=" + expiration
         + "&A=" + macAlgorithm.algorithmNumber
         + "&K=" + keyNumber
-        + "&P=01&";
+        + "&P=0011&";
   }
 
 

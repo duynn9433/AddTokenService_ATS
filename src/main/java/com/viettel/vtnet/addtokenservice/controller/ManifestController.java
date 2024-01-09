@@ -44,11 +44,12 @@ public class ManifestController {
      @RequestParam(required = false, defaultValue = "1") int algo) {
     log.info("getMediaPlaylist: " + request.getRequestURL().toString());
 
-    String orignUrl = request.getRequestURI();
-    orignUrl = orignUrl.substring(1);
-//    System.out.println(orignUrl);
-    String url = environment.getProperty("netCDN.origin") + "/" +orignUrl;
-//    System.out.println(url);
+    String orignURI = request.getRequestURI();
+    orignURI = orignURI.substring(1);
+    //remove first part for 0011
+    String hashURI = orignURI.substring(orignURI.indexOf('/') +1);
+
+    String url = environment.getProperty("netCDN.origin") + "/" +orignURI;
 
     MacAlgorithm algorithm = MacAlgorithm.getByAlgorithmNumber(algo);
     response.setHeader("Content-Disposition", "attachment; filename="+ filename + ".m3u8");
@@ -60,7 +61,7 @@ public class ManifestController {
       MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
       masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
               masterPlaylist,
-              orignUrl ,
+              hashURI ,
               uid, timestamp, key, algorithm);
       MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
       return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
@@ -68,7 +69,7 @@ public class ManifestController {
       //media
       MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
       mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
-              mediaPlaylist, orignUrl,
+              mediaPlaylist, hashURI,
               uid, timestamp, key, algorithm);
       MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();
       return ResponseEntity.ok(mediaPlaylistParser.writePlaylistAsBytes(mediaPlaylist));
@@ -77,90 +78,4 @@ public class ManifestController {
       return ResponseEntity.badRequest().body("Not support");
     }
   }
-
-//  @GetMapping(value = "/{type}/{env}/{quality}/{source}",
-//      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  public ResponseEntity<?> getMediaPlaylist(HttpServletRequest request, HttpServletResponse response,
-      @PathVariable String type,
-      @PathVariable String env,
-      @PathVariable String quality,
-      @PathVariable String source,
-      @RequestParam(required = false) String uid,
-      @RequestParam Long timestamp,
-      @RequestParam(required = false, defaultValue = "1") int key,
-      @RequestParam(required = false, defaultValue = "1") int algo) {
-    log.info("getMediaPlaylist: " + request.getRequestURL().toString());
-
-    String orignUrl = request.getRequestURI();
-    orignUrl = orignUrl.substring(1);
-//    System.out.println(orignUrl);
-    String url = environment.getProperty("netCDN.origin") + "/" + type + "/" + env +"/" + quality + "/" + source;
-//    System.out.println(url);
-
-    MacAlgorithm algorithm = MacAlgorithm.getByAlgorithmNumber(algo);
-    response.setHeader("Content-Disposition", "attachment; filename="+source);
-    log.info("START get data from origin" + environment.getProperty("netCDN.origin"));
-    String m3u8Data = getDataFromOriginService.getDataFromOrigin(url);
-    log.info("END get data from origin" + environment.getProperty("netCDN.origin"));
-    if(getDataFromOriginService.isMasterPlaylist(m3u8Data)) {
-      //master
-      MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
-      masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
-              masterPlaylist,
-              orignUrl ,
-              uid, timestamp, key, algorithm);
-      MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
-      return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
-    } else if(getDataFromOriginService.isMediaPlaylist(m3u8Data)) {
-      //media
-      MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
-      mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
-          mediaPlaylist, orignUrl,
-          uid, timestamp, key, algorithm);
-      MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();
-      return ResponseEntity.ok(mediaPlaylistParser.writePlaylistAsBytes(mediaPlaylist));
-    } else {
-      //TODO: not support
-      return ResponseEntity.badRequest().body("Not support");
-    }
-
-  }
-//  @GetMapping(value = "/{type}/{env}/{source}",
-//      produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  public ResponseEntity<?> getMasterPlaylist(HttpServletRequest request, HttpServletResponse response,
-      @PathVariable String type,
-      @PathVariable String env,
-      @PathVariable String source,
-      @RequestParam(required = false) String uid,
-      @RequestParam Long timestamp,
-      @RequestParam(required = false, defaultValue = "1") int key,
-      @RequestParam(required = false, defaultValue = "1") int algo) {
-    log.info("getMasterPlaylist: " + request.getRequestURL().toString());
-    String orignUrl = request.getRequestURI();
-    orignUrl = orignUrl.substring(1);
-
-//    System.out.println(orignUrl);
-    String url = environment.getProperty("netCDN.origin") + "/" + type + "/" + env + "/" + source;
-//    System.out.println(url);
-
-    MacAlgorithm algorithm = MacAlgorithm.getByAlgorithmNumber(algo);
-    response.setHeader("Content-Disposition", "attachment; filename="+source);
-    log.info("START get data from origin" + environment.getProperty("netCDN.origin"));
-    String m3u8Data = getDataFromOriginService.getDataFromOrigin(url);
-    log.info("END get data from origin" + environment.getProperty("netCDN.origin"));
-    if(getDataFromOriginService.isMasterPlaylist(m3u8Data)) {
-      //master
-      MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
-      masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
-          masterPlaylist,
-          orignUrl ,
-          uid, timestamp, key, algorithm);
-      MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
-      return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
-    } else {
-      //TODO: not support
-      return ResponseEntity.badRequest().body("Not support");
-    }
-  }
-
 }

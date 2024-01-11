@@ -7,6 +7,7 @@ import io.lindstrom.m3u8.parser.MediaPlaylistParser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+<<<<<<< HEAD
 import java.net.URL;
 <<<<<<< HEAD
 import javax.net.ssl.HttpsURLConnection;
@@ -19,9 +20,18 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.print.attribute.standard.Media;
 >>>>>>> 46a6f09 (brk origin)
+=======
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
+import javax.net.ssl.HttpsURLConnection;
+import lombok.extern.log4j.Log4j2;
+>>>>>>> 2340af7 ([CDN-98] feature: add HIT/MISS log)
 import org.springframework.stereotype.Service;
 
 @Service
+@Log4j2
 public class GetDataFromOriginService {
 
   //  public String
@@ -41,9 +51,10 @@ public class GetDataFromOriginService {
     System.out.println(mediaPlaylistParser.writePlaylistAsString(mediaPlaylist));
   }
 
-  public String getDataFromOrigin(String originUrl) {
+  public String getDataFromOriginHTTPS(String originUrl, boolean isHTTPS) {
     try {
       URL url = new URL(originUrl);
+<<<<<<< HEAD
 <<<<<<< HEAD
       HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
@@ -63,6 +74,39 @@ public class GetDataFromOriginService {
 //      HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
 //      //--------------------------------
       HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+=======
+      HttpURLConnection connection;
+
+      if(isHTTPS){
+        connection = (HttpsURLConnection) url.openConnection();
+      } else {
+        connection = (HttpURLConnection) url.openConnection();
+      }
+      //for check HIT/MISS
+      connection.setRequestProperty("X-Debug", "X-Cache, X-Cache-Key");
+      // Get the response headers
+      Map<String, List<String>> headers = connection.getHeaderFields();
+
+      // Iterate through the headers and find the desired ones
+      for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+        String headerName = entry.getKey();
+        List<String> headerValues = entry.getValue();
+        if (headerValues != null) {
+          for (String value : headerValues) {
+//            System.out.println(headerName + ": " + value);
+
+            // Check for specific headers
+            if ("X-Cache".equalsIgnoreCase(headerName)) {
+              // Handle X-Cache header
+              log.info("X-Cache: " + value);
+            } else if ("X-Cache-Key".equalsIgnoreCase(headerName)) {
+              // Handle X-Cache-Key header
+              log.info("X-Cache-Key: " + value);
+            }
+          }
+        }
+      }
+>>>>>>> 2340af7 ([CDN-98] feature: add HIT/MISS log)
 
       BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 >>>>>>> 46a6f09 (brk origin)

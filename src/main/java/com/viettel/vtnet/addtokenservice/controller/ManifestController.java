@@ -13,6 +13,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,6 +36,7 @@ public class ManifestController {
   }
 
 
+  @CrossOrigin
   @GetMapping(value = "/**/{filename}.m3u8", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
   public ResponseEntity<?> getM3U8File(HttpServletRequest request, HttpServletResponse response,
      @PathVariable String filename,
@@ -43,7 +45,7 @@ public class ManifestController {
      @RequestParam(required = false, defaultValue = "1") int key,
      @RequestParam(required = false, defaultValue = "1") int algo) {
     log.info("getMediaPlaylist: " + request.getRequestURL().toString());
-
+    String schema = request.getScheme();
     String orignURI = request.getRequestURI();
     orignURI = orignURI.substring(1);
     //remove first part for 0011
@@ -54,7 +56,12 @@ public class ManifestController {
     MacAlgorithm algorithm = MacAlgorithm.getByAlgorithmNumber(algo);
     response.setHeader("Content-Disposition", "attachment; filename="+ filename + ".m3u8");
     log.info("START get data from origin " + url);
-    String m3u8Data = getDataFromOriginService.getDataFromOrigin(url);
+    String m3u8Data;
+    if(schema.equals("https")) {
+      m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url, true);
+    } else {
+      m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url, false);
+    }
     log.info("END get data from origin" + m3u8Data );
     if(getDataFromOriginService.isMasterPlaylist(m3u8Data)) {
       //master

@@ -1,6 +1,7 @@
 package com.viettel.vtnet.addtokenservice.controller;
 
 import com.viettel.vtnet.addtokenservice.common.MacAlgorithm;
+import com.viettel.vtnet.addtokenservice.config.UrlHashConfig;
 import com.viettel.vtnet.addtokenservice.service.GetDataFromOriginService;
 import com.viettel.vtnet.addtokenservice.service.RewriteManifestService;
 import io.lindstrom.m3u8.model.MasterPlaylist;
@@ -26,13 +27,15 @@ public class ManifestController {
   private Environment environment;
   private GetDataFromOriginService getDataFromOriginService;
   private RewriteManifestService rewriteManifestService;
+  private UrlHashConfig urlHashConfig;
 
   public ManifestController(Environment environment,
       GetDataFromOriginService getDataFromOriginService,
-      RewriteManifestService rewriteManifestService) {
+      RewriteManifestService rewriteManifestService, UrlHashConfig urlHashConfig) {
     this.environment = environment;
     this.getDataFromOriginService = getDataFromOriginService;
     this.rewriteManifestService = rewriteManifestService;
+    this.urlHashConfig = urlHashConfig;
   }
 
 <<<<<<< HEAD
@@ -62,6 +65,7 @@ public class ManifestController {
   public ResponseEntity<?> getM3U8File(HttpServletRequest request, HttpServletResponse response,
      @PathVariable String filename,
      @RequestParam(required = false) String uid,
+<<<<<<< HEAD
      @RequestParam Long timestamp,
      @RequestParam(required = false, defaultValue = "1") int key,
      @RequestParam(required = false, defaultValue = "1") int algo) {
@@ -132,17 +136,38 @@ public class ManifestController {
     String m3u8Data = getDataFromOriginService.getDataFromOrigin(url);
 <<<<<<< HEAD
 =======
+=======
+     @RequestParam Long timestamp) {
+    log.debug("getMediaPlaylist: " + request.getRequestURL().toString());
+    //response file name
+    response.setHeader("Content-Disposition", "attachment; filename="+ filename + ".m3u8");
+    /**Algorithm*/
+    MacAlgorithm algorithm = urlHashConfig.getAlgorithm();
+    /**Key*/
+    int keyNumber = urlHashConfig.getKeyNumber();
+    /**URL and get m3u8 data*/
+    String schema = request.getScheme();
+    String requestURL = request.getRequestURL().toString();
+    String requestParam = request.getQueryString();
+    String requestURI = request.getRequestURI();
+    String url = environment.getProperty("netCDN.origin") +requestURI;
+    log.debug("START get data from origin " + url);
+>>>>>>> 0ddc022 ([CDN-98] feature: support useParts P and new token rule)
     String m3u8Data;
     if(schema.equals("https")) {
       m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url, true);
     } else {
       m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url, false);
     }
+<<<<<<< HEAD
 >>>>>>> 2340af7 ([CDN-98] feature: add HIT/MISS log)
     log.info("END get data from origin" + m3u8Data );
 =======
     log.info("END get data from origin" + environment.getProperty("netCDN.origin"));
 >>>>>>> 46a6f09 (brk origin)
+=======
+    log.debug("END get data from origin" + m3u8Data );
+>>>>>>> 0ddc022 ([CDN-98] feature: support useParts P and new token rule)
     if(getDataFromOriginService.isMasterPlaylist(m3u8Data)) {
       //master
       MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
@@ -150,6 +175,7 @@ public class ManifestController {
 <<<<<<< HEAD
 <<<<<<< HEAD
               masterPlaylist,
+<<<<<<< HEAD
               hashURI ,
               uid, timestamp, key, algorithm);
 =======
@@ -162,6 +188,10 @@ public class ManifestController {
               orignUrl ,
               uid, timestamp, key, algorithm);
 >>>>>>> 46a6f09 (brk origin)
+=======
+              requestURL, requestParam,
+              timestamp, algorithm, keyNumber, urlHashConfig.getUseParts(), urlHashConfig.getHashQueryParams());
+>>>>>>> 0ddc022 ([CDN-98] feature: support useParts P and new token rule)
       MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
       return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
     } else if(getDataFromOriginService.isMediaPlaylist(m3u8Data)) {
@@ -169,12 +199,17 @@ public class ManifestController {
       MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
       mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
 <<<<<<< HEAD
+<<<<<<< HEAD
               mediaPlaylist, hashURI,
               uid, timestamp, key, algorithm);
 =======
           mediaPlaylist, "this version not use because in media playlist have full url",
           uid, timestamp, K, A);
 >>>>>>> 50a9ca8 (save)
+=======
+              mediaPlaylist, requestURL, requestParam,
+          timestamp, algorithm, keyNumber, urlHashConfig.getUseParts(), urlHashConfig.getHashQueryParams());
+>>>>>>> 0ddc022 ([CDN-98] feature: support useParts P and new token rule)
       MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();
       return ResponseEntity.ok(mediaPlaylistParser.writePlaylistAsBytes(mediaPlaylist));
     } else {

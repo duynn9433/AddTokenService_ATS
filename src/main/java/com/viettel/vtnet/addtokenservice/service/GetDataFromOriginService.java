@@ -93,15 +93,13 @@ public class GetDataFromOriginService {
         List<String> headerValues = entry.getValue();
         if (headerValues != null) {
           for (String value : headerValues) {
-//            System.out.println(headerName + ": " + value);
-
             // Check for specific headers
             if ("X-Cache".equalsIgnoreCase(headerName)) {
               // Handle X-Cache header
-              log.info("X-Cache: " + value);
+              log.debug("X-Cache: " + value);
             } else if ("X-Cache-Key".equalsIgnoreCase(headerName)) {
               // Handle X-Cache-Key header
-              log.info("X-Cache-Key: " + value);
+              log.debug("X-Cache-Key: " + value);
             }
           }
         }
@@ -122,11 +120,25 @@ public class GetDataFromOriginService {
     }
   }
 
+<<<<<<< HEAD
   public boolean isMasterPlaylist(String m3u8Data) {
     return m3u8Data.contains("#EXT-X-STREAM-INF");
   }
 
   public boolean isMediaPlaylist(String m3u8Data) {
+=======
+  /**
+   * check is master playlist base on "#EXT-X-STREAM-INF"
+   * */
+  public boolean isMasterPlaylist(String m3u8Data){
+    return m3u8Data.contains("#EXT-X-STREAM-INF");
+  }
+
+  /**
+   * check is media playlist base on "#EXTINF"
+   * */
+  public boolean isMediaPlaylist(String m3u8Data){
+>>>>>>> 0ddc022 ([CDN-98] feature: support useParts P and new token rule)
     return m3u8Data.contains("#EXTINF");
   }
 

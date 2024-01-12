@@ -5,16 +5,12 @@ import static com.viettel.vtnet.addtokenservice.common.UrlUtil.isHaveHttpSchema;
 
 import com.viettel.vtnet.addtokenservice.common.HMACUtil;
 import com.viettel.vtnet.addtokenservice.common.MacAlgorithm;
-<<<<<<< HEAD
-import io.lindstrom.m3u8.model.*;
-=======
 import com.viettel.vtnet.addtokenservice.common.UrlUtil;
 import io.lindstrom.m3u8.model.AlternativeRendition;
 import io.lindstrom.m3u8.model.MasterPlaylist;
 import io.lindstrom.m3u8.model.MediaPlaylist;
 import io.lindstrom.m3u8.model.MediaSegment;
 import io.lindstrom.m3u8.model.Variant;
->>>>>>> 0ddc022 ([CDN-98] feature: support useParts P and new token rule)
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -138,39 +134,7 @@ public class RewriteManifestService {
     int sizeOfUrlPrefix = 0; //for remove after generate token
     if (isHaveHttpSchema != 0) {
       //remove schema
-<<<<<<< HEAD
-      sb.delete(0, sb.indexOf(":") + 3);
-    } else {
-      String urlPrefix = getUrlPrefixHaveSchemaForUrlSigPlugin(originUrl);
-<<<<<<< HEAD
-      //remove master.m3u8
-
-      originUrlSb.delete(originUrlSb.lastIndexOf("/") , originUrlSb.length()+1);
-
-//      if(isMediaPlaylist){
-//        //remove segment
-//        originUrlSb.delete(originUrlSb.lastIndexOf("/") , originUrlSb.length()+1);
-//      }
-=======
->>>>>>> 50a9ca8 (save)
-      //add urlprefix
-      if (urlPrefix != null) {
-        sb.insert(0,'/');
-        sb.insert(0, urlPrefix);
-        sizeOfUrlPrefix = urlPrefix.length()+1;
-      } else {
-        //TODO: get prefix from origin url (verify info)
-
-      }
-    }
-//      long timestamp = System.currentTimeMillis() + expiration;
-    sb.append('?');
-//        .append("uid=").append(uid)
-    if(!isMediaPlaylist){
-      sb.append("timestamp=").append(expiration).append("&");
-=======
       baseUrlSb.delete(0, baseUrl.indexOf(":") + 3);
->>>>>>> 0ddc022 ([CDN-98] feature: support useParts P and new token rule)
     }
 
     /*get use path*/

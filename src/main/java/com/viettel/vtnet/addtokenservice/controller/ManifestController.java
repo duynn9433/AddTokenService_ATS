@@ -57,13 +57,13 @@ public class ManifestController {
     String requestURL = request.getRequestURL().toString();
     String requestParam = request.getQueryString();
     String requestURI = request.getRequestURI();
-    String url = environment.getProperty("netCDN.origin") +requestURI;
+    String url = environment.getProperty("netCDN.origin") +requestURI ;
     log.debug("START get data from origin " + url);
     String m3u8Data;
     if(schema.equals("https")) {
-      m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url, true);
+      m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url+ "?" + requestParam, true);
     } else {
-      m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url, false);
+      m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url+ "?" + requestParam, false);
     }
 
     log.debug("END get data from origin" + m3u8Data );

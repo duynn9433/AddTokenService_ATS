@@ -113,15 +113,15 @@ public class RewriteManifestService {
    *
    * @param baseUrl:      base m3u8 url :
    *                      (http://192.168.122.32/)foo/asdfasdf/adsf.m3u8?timestamp=213&uid=uid123&E=1703155339&A=1&K=4&P=1&S=608baf47ce4d76be52eb6488bce29f9ea4cfc2ed
-   * @param m3u8FileName: url in m3u8 file: 144p_index.m3u8 ||
-   *                      https://cdnvt.net/hls-stream/test/144p_segment13102.ts
+   * @param m3u8FileData: url in m3u8 file: 144p_index.m3u8?a=1&b=2 ||
+   *                      https://cdnvt.net/hls-stream/test/144p_segment13102.ts?a=1&b=2
    * @param expiration:   time to live : 1703155339L
    * @param macAlgorithm: algorithm : HmacSHA1
    * @param keyNumber:    key number : 4
    * @param useParts:     use parts : [false, false, true, true]
    * @param listHashQueryParam: list hash query param : [timestamp, uid]
    */
-  private String generateUrl(String baseUrl, String requestParam, String m3u8FileName,
+  private String generateUrl(String baseUrl, String requestParam, String m3u8FileData,
       long expiration,
       MacAlgorithm macAlgorithm,
       int keyNumber,
@@ -136,6 +136,10 @@ public class RewriteManifestService {
       //remove schema
       baseUrlSb.delete(0, baseUrl.indexOf(":") + 3);
     }
+    //remove query param in m3u8 file data
+    if (m3u8FileData.contains("?")) {
+      m3u8FileData = m3u8FileData.substring(0, m3u8FileData.indexOf("?"));
+    }
 
     /*get use path*/
     String usePath = UrlUtil.getUseParts(baseUrlSb.toString(), useParts);
@@ -149,7 +153,7 @@ public class RewriteManifestService {
     String hashQueryParam = UrlUtil.getHashQueryParamWithValue(requestParam,
         listHashQueryParam);
 
-    String hashData = usePath + "/" + m3u8FileName + "?" + hashQueryParam;
+    String hashData = usePath + "/" + m3u8FileData + "?" + hashQueryParam;
     //generate token
     String token = generateToken(hashData, keyNumber, macAlgorithm);
     log.debug("generate data: " + hashData + " \n token: " + token +
@@ -158,7 +162,11 @@ public class RewriteManifestService {
      * return MUST include all query param + new token
      * */
     //String schema = isHaveHttpSchema == 0 ? "" : (isHaveHttpSchema == 1 ? "http://" : "https://");
-    String returnData = m3u8FileName + "?" + requestParam + "&token=" + token;
+    String returnData = m3u8FileData
+        + "?"
+        + requestParam
+        + "&"
+        + "token=" + token;
     log.debug("return data: " + returnData);
     return returnData;
   }

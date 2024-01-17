@@ -64,7 +64,7 @@ public class GetDataFromOriginService {
         }
       }
       try(ReadableByteChannel readableByteChannel = Channels.newChannel(connection.getInputStream())){
-        ByteBuffer buffer = ByteBuffer.allocate(8192); // 8KB
+        ByteBuffer buffer = ByteBuffer.allocate(4000);
         StringBuilder stringBuilder = new StringBuilder();
 
         while (readableByteChannel.read(buffer) > 0) {

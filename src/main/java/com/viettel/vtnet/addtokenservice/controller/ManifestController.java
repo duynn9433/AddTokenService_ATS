@@ -1,7 +1,8 @@
 package com.viettel.vtnet.addtokenservice.controller;
 
 import com.viettel.vtnet.addtokenservice.common.MacAlgorithm;
-import com.viettel.vtnet.addtokenservice.config.UrlHashConfig;
+import com.viettel.vtnet.addtokenservice.config.UrlSigConfig;
+import com.viettel.vtnet.addtokenservice.config.UrlSigConfigPool;
 import com.viettel.vtnet.addtokenservice.service.GetDataFromOriginService;
 import com.viettel.vtnet.addtokenservice.service.RewriteManifestService;
 import io.lindstrom.m3u8.model.MasterPlaylist;
@@ -11,7 +12,6 @@ import io.lindstrom.m3u8.parser.MediaPlaylistParser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -23,21 +23,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController()
 @Log4j2
 public class ManifestController {
-
-  private Environment environment;
   private GetDataFromOriginService getDataFromOriginService;
   private RewriteManifestService rewriteManifestService;
-  private UrlHashConfig urlHashConfig;
+  private UrlSigConfigPool urlSigConfigPool;
 
-  public ManifestController(Environment environment,
+  public ManifestController(
       GetDataFromOriginService getDataFromOriginService,
-      RewriteManifestService rewriteManifestService, UrlHashConfig urlHashConfig) {
-    this.environment = environment;
+      RewriteManifestService rewriteManifestService,
+      UrlSigConfigPool urlSigConfigPool) {
     this.getDataFromOriginService = getDataFromOriginService;
     this.rewriteManifestService = rewriteManifestService;
-    this.urlHashConfig = urlHashConfig;
+    this.urlSigConfigPool = urlSigConfigPool;
   }
-
 
   @CrossOrigin
   @GetMapping(value = "/**/{filename}.m3u8", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
@@ -49,18 +46,14 @@ public class ManifestController {
     log.debug("getMediaPlaylist: " + request.getRequestURL().toString());
     //response file name
     response.setHeader("Content-Disposition", "attachment; filename="+ filename + ".m3u8");
-    /**Algorithm*/
-    MacAlgorithm algorithm = urlHashConfig.getAlgorithm();
-    /**Key*/
-    int keyNumber = urlHashConfig.getKeyNumber();
     /**URL and get m3u8 data*/
     String schema = request.getScheme();
-    String requestURL = request.getRequestURL().toString();
     String domain = request.getRemoteHost();
-
     String requestParam = request.getQueryString();
     String requestURI = request.getRequestURI();
-    String url = environment.getProperty("netCDN.origin") + requestURI ;
+    String clientServiceName = requestURI.substring(1, requestURI.indexOf("/",1));
+    UrlSigConfig urlSigConfig = urlSigConfigPool.getUrlSigConfig(clientServiceName);
+    String url = urlSigConfigPool.getOrigin(clientServiceName) + requestURI ;
     log.debug("START get data from origin " + url);
 
     String m3u8Data = schema.equals("https")
@@ -75,7 +68,7 @@ public class ManifestController {
               masterPlaylist,
               domain + requestURI,
               requestParam,
-              timestamp, algorithm, keyNumber, urlHashConfig.getUseParts(), urlHashConfig.getHashQueryParams());
+              urlSigConfig);
       MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
 
       Long endTime = System.currentTimeMillis();
@@ -89,7 +82,7 @@ public class ManifestController {
               mediaPlaylist,
               domain + requestURI,
               requestParam,
-              timestamp, algorithm, keyNumber, urlHashConfig.getUseParts(), urlHashConfig.getHashQueryParams());
+              urlSigConfig);
       MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();
 
       Long endTime = System.currentTimeMillis();

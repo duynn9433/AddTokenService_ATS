@@ -6,6 +6,8 @@ import static com.viettel.vtnet.addtokenservice.common.UrlUtil.isHaveHttpSchema;
 import com.viettel.vtnet.addtokenservice.common.HMACUtil;
 import com.viettel.vtnet.addtokenservice.common.MacAlgorithm;
 import com.viettel.vtnet.addtokenservice.common.UrlUtil;
+import com.viettel.vtnet.addtokenservice.config.UrlSigConfig;
+import com.viettel.vtnet.addtokenservice.config.UrlSigConfigPool;
 import io.lindstrom.m3u8.model.AlternativeRendition;
 import io.lindstrom.m3u8.model.MasterPlaylist;
 import io.lindstrom.m3u8.model.MediaPlaylist;
@@ -22,30 +24,19 @@ import org.springframework.stereotype.Service;
 @Service
 @Log4j2
 public class RewriteManifestService {
-
-  private Environment env;
-
-  public RewriteManifestService(Environment env) {
-    this.env = env;
-  }
-
   public MasterPlaylist rewriteMasterPlaylist(
       MasterPlaylist originMasterPlaylist,
       String baseUrl,
       String requestParam,
-      Long expiration,
-      MacAlgorithm macAlgorithm,
-      int keyNumber,
-      Boolean[] useParts,
-      List<String> listHashQueryParam) {
+      UrlSigConfig urlSigConfig
+  ) {
     //video-playlist
     List<Variant> variants = originMasterPlaylist.variants();
     List<Variant> updatedVariants = new ArrayList<>();
     for (int i = 0; i < variants.size(); i++) {
       Variant v = variants.get(i);
       //hash
-      String urlWithToken = generateUrl(baseUrl, requestParam, v.uri(),
-          expiration, macAlgorithm, keyNumber, useParts, listHashQueryParam, false);
+      String urlWithToken = generateUrl(baseUrl, requestParam, v.uri(), urlSigConfig);
       //end-hash
       Variant updatedVariant = Variant.builder().from(v).uri(urlWithToken).build();
       updatedVariants.add(updatedVariant);
@@ -59,9 +50,7 @@ public class RewriteManifestService {
       //hash
       String urlWithToken = "";
       if (ar.uri().isPresent()) {
-        urlWithToken = generateUrl(baseUrl, requestParam, ar.uri().get(),
-            expiration, macAlgorithm, keyNumber, useParts,
-            new ArrayList<>(), false);
+        urlWithToken = generateUrl(baseUrl, requestParam, ar.uri().get(), urlSigConfig);
       }
       //end-hash
       AlternativeRendition updateAR = AlternativeRendition.builder().from(ar).uri(urlWithToken)
@@ -80,20 +69,15 @@ public class RewriteManifestService {
       MediaPlaylist originMediaPlaylist,
       String baseUrl,
       String requestParam,
-      long expiration,
-      MacAlgorithm macAlgorithm,
-      int keyNumber,
-      Boolean[] useParts,
-      List<String> listHashQueryParam) {
+      UrlSigConfig urlSigConfig
+  ) {
     List<MediaSegment> segments = originMediaPlaylist.mediaSegments();
     List<MediaSegment> updatedSegments = new ArrayList<>();
     for (int i = 0; i < segments.size(); i++) {
       MediaSegment segment = segments.get(i);
 
       //hash
-      String urlWithToken = generateUrl(baseUrl, requestParam, segment.uri(),
-          expiration, macAlgorithm, keyNumber, useParts,
-          listHashQueryParam, true);
+      String urlWithToken = generateUrl(baseUrl, requestParam, segment.uri(), urlSigConfig);
       //end-hash
       MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment).uri(urlWithToken)
           .build();
@@ -115,19 +99,13 @@ public class RewriteManifestService {
    *                      (http://192.168.122.32/)foo/asdfasdf/adsf.m3u8?timestamp=213&uid=uid123&E=1703155339&A=1&K=4&P=1&S=608baf47ce4d76be52eb6488bce29f9ea4cfc2ed
    * @param m3u8FileData: url in m3u8 file: 144p_index.m3u8?a=1&b=2 ||
    *                      https://cdnvt.net/hls-stream/test/144p_segment13102.ts?a=1&b=2
-   * @param expiration:   time to live : 1703155339L
-   * @param macAlgorithm: algorithm : HmacSHA1
-   * @param keyNumber:    key number : 4
-   * @param useParts:     use parts : [false, false, true, true]
-   * @param listHashQueryParam: list hash query param : [timestamp, uid]
+   * @param urlSigConfig: algorithm : HmacSHA1 <br>
+   * key number : 4 <br>
+   *   use parts : [false, false, true, true]<br>
+   * list hash query param : [timestamp, uid]<br>
    */
   private String generateUrl(String baseUrl, String requestParam, String m3u8FileData,
-      long expiration,
-      MacAlgorithm macAlgorithm,
-      int keyNumber,
-      Boolean[] useParts,
-      List<String> listHashQueryParam,
-      boolean isMediaPlaylist) {
+      UrlSigConfig urlSigConfig) {
 
     //remove query param in m3u8 file data
     if (m3u8FileData.contains("?")) {
@@ -135,21 +113,22 @@ public class RewriteManifestService {
     }
 
     /*get use path*/
-    String usePath = UrlUtil.getUseParts(baseUrl, useParts);
+    String usePath = UrlUtil.getUseParts(baseUrl, urlSigConfig.getUseParts());
     log.debug("usePath: " + usePath);
     //remove master.m3u8
     usePath = usePath.substring(0, usePath.lastIndexOf("/"));
     /*get hash query param*/
     String hashQueryParam = UrlUtil.getHashQueryParamWithValue(requestParam,
-        listHashQueryParam);
+        urlSigConfig.getHashQueryParams());
 
     String hashData = usePath + "/" + m3u8FileData + "?" + hashQueryParam;
     //generate token
-    String token = generateToken(hashData, keyNumber, macAlgorithm);
+    //get key
+    String token = generateToken(hashData, urlSigConfig.getKey(), urlSigConfig.getAlgorithm());
     log.debug("generate data: " + hashData );
     log.debug("token: " + token);
-    log.debug("keyNumber: " + keyNumber);
-    log.debug("algorithm: " + macAlgorithm);
+    log.debug("keyNumber: " + urlSigConfig.getKeyNumber());
+    log.debug("algorithm: " + urlSigConfig.getAlgorithm());
     /* hash data != return url data
      * return MUST include all query param + new token
      * */
@@ -163,12 +142,7 @@ public class RewriteManifestService {
     return returnData.toString();
   }
 
-  private String generateToken(String data, int keyNumber, MacAlgorithm algorithm) {
-    //get key
-    //TODO: dynamic get key
-    String key = env.getProperty("url_sig.key" + keyNumber);
-    //generate token
-    assert key != null;
+  private String generateToken(String data, String key, MacAlgorithm algorithm) {
     try {
       return HMACUtil.hmacWithJava(algorithm, data, key);
     } catch (NoSuchAlgorithmException | InvalidKeyException e) {

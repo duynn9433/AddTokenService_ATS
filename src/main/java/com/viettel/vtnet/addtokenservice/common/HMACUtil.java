@@ -4,9 +4,10 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.apache.commons.codec.binary.Hex;
 
 public class HMACUtil {
-
+  //TODO: cache SecretKeySpec
   public static void main(String[] args) throws NoSuchAlgorithmException, InvalidKeyException {
     System.out.println(hmacWithJava(MacAlgorithm.HmacMD5, "data", "key"));
   }
@@ -15,7 +16,8 @@ public class HMACUtil {
     SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), algorithm.toString());
     Mac mac = Mac.getInstance(algorithm.toString());
     mac.init(secretKeySpec);
-    return bytesToHex(mac.doFinal(data.getBytes()));
+//    return bytesToHex(mac.doFinal(data.getBytes()));
+    return Hex.encodeHexString(mac.doFinal(data.getBytes()));
   }
 
   public static String bytesToHex(byte[] hash) {

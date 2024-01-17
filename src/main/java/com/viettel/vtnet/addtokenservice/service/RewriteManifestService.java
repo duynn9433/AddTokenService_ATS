@@ -129,50 +129,41 @@ public class RewriteManifestService {
       List<String> listHashQueryParam,
       boolean isMediaPlaylist) {
 
-    StringBuilder baseUrlSb = new StringBuilder(baseUrl);
-    int isHaveHttpSchema = isHaveHttpSchema(baseUrl);
-    int sizeOfUrlPrefix = 0; //for remove after generate token
-    if (isHaveHttpSchema != 0) {
-      //remove schema
-      baseUrlSb.delete(0, baseUrl.indexOf(":") + 3);
-    }
     //remove query param in m3u8 file data
     if (m3u8FileData.contains("?")) {
       m3u8FileData = m3u8FileData.substring(0, m3u8FileData.indexOf("?"));
     }
 
     /*get use path*/
-    String usePath = UrlUtil.getUseParts(baseUrlSb.toString(), useParts);
+    String usePath = UrlUtil.getUseParts(baseUrl, useParts);
+    log.debug("usePath: " + usePath);
     //remove master.m3u8
     usePath = usePath.substring(0, usePath.lastIndexOf("/"));
     /*get hash query param*/
-//    List<String> ignoreHashQueryParam = new ArrayList<>();
-//    if (isMediaPlaylist) {
-//      ignoreHashQueryParam.add("timestamp");
-//    }
     String hashQueryParam = UrlUtil.getHashQueryParamWithValue(requestParam,
         listHashQueryParam);
 
     String hashData = usePath + "/" + m3u8FileData + "?" + hashQueryParam;
     //generate token
     String token = generateToken(hashData, keyNumber, macAlgorithm);
-    log.debug("generate data: " + hashData + " \n token: " + token +
-        " \n keyNumber: " + keyNumber + " \n algorithm: " + macAlgorithm);
+    log.debug("generate data: " + hashData );
+    log.debug("token: " + token);
+    log.debug("keyNumber: " + keyNumber);
+    log.debug("algorithm: " + macAlgorithm);
     /* hash data != return url data
      * return MUST include all query param + new token
      * */
     //String schema = isHaveHttpSchema == 0 ? "" : (isHaveHttpSchema == 1 ? "http://" : "https://");
-    String returnData = m3u8FileData
-        + "?"
-        + requestParam
-        + "&"
-        + "token=" + token;
+    StringBuilder returnData = new StringBuilder(m3u8FileData)
+        .append("?")
+        .append(requestParam)
+        .append("&")
+        .append("token=").append(token);
     log.debug("return data: " + returnData);
-    return returnData;
+    return returnData.toString();
   }
 
   private String generateToken(String data, int keyNumber, MacAlgorithm algorithm) {
-    log.debug("generateToken: " + data + " keyNumber: " + keyNumber + " algorithm: " + algorithm);
     //get key
     //TODO: dynamic get key
     String key = env.getProperty("url_sig.key" + keyNumber);

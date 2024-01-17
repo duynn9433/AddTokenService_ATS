@@ -45,6 +45,7 @@ public class ManifestController {
      @PathVariable String filename,
      @RequestParam(required = false) String uid,
      @RequestParam Long timestamp) {
+    Long startTime = System.currentTimeMillis();
     log.debug("getMediaPlaylist: " + request.getRequestURL().toString());
     //response file name
     response.setHeader("Content-Disposition", "attachment; filename="+ filename + ".m3u8");
@@ -55,16 +56,16 @@ public class ManifestController {
     /**URL and get m3u8 data*/
     String schema = request.getScheme();
     String requestURL = request.getRequestURL().toString();
+    String domain = request.getRemoteHost();
+
     String requestParam = request.getQueryString();
     String requestURI = request.getRequestURI();
-    String url = environment.getProperty("netCDN.origin") +requestURI ;
+    String url = environment.getProperty("netCDN.origin") + requestURI ;
     log.debug("START get data from origin " + url);
-    String m3u8Data;
-    if(schema.equals("https")) {
-      m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url+ "?" + requestParam, true);
-    } else {
-      m3u8Data = getDataFromOriginService.getDataFromOriginHTTPS(url+ "?" + requestParam, false);
-    }
+
+    String m3u8Data = schema.equals("https")
+        ? getDataFromOriginService.getDataFromOriginHTTPS(url+ "?" + requestParam, true)
+        : getDataFromOriginService.getDataFromOriginHTTPS(url+ "?" + requestParam, false);
 
     log.debug("END get data from origin" + m3u8Data );
     if(getDataFromOriginService.isMasterPlaylist(m3u8Data)) {
@@ -72,17 +73,28 @@ public class ManifestController {
       MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
       masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
               masterPlaylist,
-              requestURL, requestParam,
+              domain + requestURI,
+              requestParam,
               timestamp, algorithm, keyNumber, urlHashConfig.getUseParts(), urlHashConfig.getHashQueryParams());
       MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
+
+      Long endTime = System.currentTimeMillis();
+      System.out.println("Spent time: " + (endTime - startTime));
+
       return ResponseEntity.ok(masterPlaylistParser.writePlaylistAsBytes(masterPlaylist));
     } else if(getDataFromOriginService.isMediaPlaylist(m3u8Data)) {
       //media
       MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
       mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
-              mediaPlaylist, requestURL, requestParam,
-          timestamp, algorithm, keyNumber, urlHashConfig.getUseParts(), urlHashConfig.getHashQueryParams());
+              mediaPlaylist,
+              domain + requestURI,
+              requestParam,
+              timestamp, algorithm, keyNumber, urlHashConfig.getUseParts(), urlHashConfig.getHashQueryParams());
       MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();
+
+      Long endTime = System.currentTimeMillis();
+      System.out.println("Spent time: " + (endTime - startTime));
+
       return ResponseEntity.ok(mediaPlaylistParser.writePlaylistAsBytes(mediaPlaylist));
     } else {
       //TODO: not support

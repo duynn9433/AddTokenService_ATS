@@ -6,11 +6,14 @@ import io.lindstrom.m3u8.model.MediaPlaylist;
 import io.lindstrom.m3u8.parser.MasterPlaylistParser;
 import io.lindstrom.m3u8.parser.MediaPlaylistParser;
 import java.io.IOException;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -64,17 +67,25 @@ public class GetDataFromOriginService {
         }
       }
       try(ReadableByteChannel readableByteChannel = Channels.newChannel(connection.getInputStream())){
-        ByteBuffer buffer = ByteBuffer.allocate(4000);
-        StringBuilder stringBuilder = new StringBuilder();
-
-        while (readableByteChannel.read(buffer) > 0) {
-          buffer.flip();
-          while (buffer.hasRemaining()) {
-            stringBuilder.append((char) buffer.get());
-          }
-          buffer.clear();
+        Reader reader = Channels.newReader(readableByteChannel, StandardCharsets.UTF_8.newDecoder(), 500);
+        CharBuffer b = CharBuffer.allocate(500);
+        StringBuilder out = new StringBuilder();
+        while (reader.read(b) != -1) {
+          b.flip();
+          out.append(b);
         }
-        return stringBuilder.toString();
+        return out.toString();
+//        ByteBuffer buffer = ByteBuffer.allocate(200);
+//        StringBuilder stringBuilder = new StringBuilder();
+//
+//        while (readableByteChannel.read(buffer) > 0) {
+//          buffer.flip();
+//          while (buffer.hasRemaining()) {
+//            stringBuilder.append((char) buffer.get());
+//          }
+//          buffer.clear();
+//        }
+//        return stringBuilder.toString();
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

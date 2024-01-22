@@ -16,6 +16,9 @@ public class UrlSigConfig {
 
   public UrlSigConfig() {
     keyMap = new HashMap<>();
+    algorithm = MacAlgorithm.HmacMD5;
+    keyNumber = 1;
+    useParts = new Boolean[]{false, false, true, true};
   }
 
   public String getKey(int keyNumber){

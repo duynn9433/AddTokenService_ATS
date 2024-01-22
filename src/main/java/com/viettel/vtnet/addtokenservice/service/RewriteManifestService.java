@@ -12,11 +12,16 @@ import io.lindstrom.m3u8.model.AlternativeRendition;
 import io.lindstrom.m3u8.model.MasterPlaylist;
 import io.lindstrom.m3u8.model.MediaPlaylist;
 import io.lindstrom.m3u8.model.MediaSegment;
+import io.lindstrom.m3u8.model.PartialSegment;
+import io.lindstrom.m3u8.model.PreloadHint;
+import io.lindstrom.m3u8.model.RenditionReport;
+import io.lindstrom.m3u8.model.SegmentMap;
 import io.lindstrom.m3u8.model.Variant;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -71,19 +76,87 @@ public class RewriteManifestService {
       String requestParam,
       UrlSigConfig urlSigConfig
   ) {
+    //EXTINF
     List<MediaSegment> segments = originMediaPlaylist.mediaSegments();
+
+
     List<MediaSegment> updatedSegments = new ArrayList<>();
     for (int i = 0; i < segments.size(); i++) {
       MediaSegment segment = segments.get(i);
+      //segment map
+        //EXT-X-MAP
+      Optional<SegmentMap> segmentMap = segment.segmentMap();
+      Optional<SegmentMap> updatedSegmentMap = Optional.empty();
+      if (segmentMap.isPresent()) {
+        SegmentMap sm = segmentMap.get();
+        //hash
+        String urlWithToken = generateUrl(baseUrl, requestParam, sm.uri(), urlSigConfig);
+        //end-hash
+        updatedSegmentMap = Optional.of(SegmentMap.builder().from(sm).uri(urlWithToken).build());
+      }
+        //end-EXT-X-MAP
 
+      //end-segment map
       //hash
       String urlWithToken = generateUrl(baseUrl, requestParam, segment.uri(), urlSigConfig);
       //end-hash
+      if(updatedSegmentMap.isPresent()){
+        MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment).uri(urlWithToken)
+            .segmentMap(updatedSegmentMap).build();
+        updatedSegments.add(updatedMediaSegment);
+        continue;
+      }
       MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment).uri(urlWithToken)
           .build();
       updatedSegments.add(updatedMediaSegment);
     }
-    return MediaPlaylist.builder().from(originMediaPlaylist).mediaSegments(updatedSegments).build();
+    //end-EXTINF
+    //X-PART
+    List<PartialSegment> partialSegments = originMediaPlaylist.partialSegments();
+    List<PartialSegment> updatedPartialSegments = new ArrayList<>();
+    for (int i = 0; i < partialSegments.size(); i++) {
+      PartialSegment partialSegment = partialSegments.get(i);
+      //hash
+      String urlWithToken = generateUrl(baseUrl, requestParam, partialSegment.uri(), urlSigConfig);
+      //end-hash
+      PartialSegment updatedPartialSegment = PartialSegment.builder().from(partialSegment)
+          .uri(urlWithToken).build();
+      updatedPartialSegments.add(updatedPartialSegment);
+    }
+    //end-X-PART
+    //PreloadHint
+    Optional<PreloadHint> preloadHints = originMediaPlaylist.preloadHint();
+    Optional<PreloadHint> updatedPreloadHints = Optional.empty();
+    if (preloadHints.isPresent()) {
+      PreloadHint preloadHint = preloadHints.get();
+      //hash
+      String urlWithToken = generateUrl(baseUrl, requestParam, preloadHint.uri(), urlSigConfig);
+      //end-hash
+      updatedPreloadHints = Optional.of(PreloadHint.builder().from(preloadHint).uri(urlWithToken)
+          .build());
+    }
+    //end-PreloadHint
+    //X-RENDITION-REPORT
+    List<RenditionReport> renditionReports = originMediaPlaylist.renditionReports();
+    List<RenditionReport> updatedRenditionReports = new ArrayList<>();
+    for (int i = 0; i < renditionReports.size(); i++) {
+      RenditionReport renditionReport = renditionReports.get(i);
+      //hash
+      String urlWithToken = generateUrl(baseUrl, requestParam, renditionReport.uri(),
+          urlSigConfig);
+      //end-hash
+      RenditionReport updatedRenditionReport = RenditionReport.builder().from(renditionReport)
+          .uri(urlWithToken).build();
+      updatedRenditionReports.add(updatedRenditionReport);
+    }
+    //end-X-RENDITION-REPORT
+
+    return MediaPlaylist.builder().from(originMediaPlaylist)
+        .mediaSegments(updatedSegments)
+        .partialSegments(updatedPartialSegments)
+        .preloadHint(updatedPreloadHints)
+        .renditionReports(updatedRenditionReports)
+        .build();
   }
 
   /**

@@ -53,7 +53,7 @@ public class UrlSigConfigFileRepo {
 
   private void processLine(UrlSigConfig urlSigConfig, String line) {
     // Process line here
-    if(line.contains("key_num")){
+    if(line.contains("knumber")){
       String[] arr = line.split(" ");
       urlSigConfig.setKeyNumber(Integer.parseInt(arr[2]));
     } else if(line.contains("key")){

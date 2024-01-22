@@ -49,6 +49,7 @@ public class ManifestController {
     /**URL and get m3u8 data*/
     String schema = request.getScheme();
     String domain = request.getRemoteHost();
+    log.debug("remote host: " + domain +  " " + request.getRemoteAddr());
     String requestParam = request.getQueryString();
     String requestURI = request.getRequestURI();
     String clientServiceName = requestURI.substring(1, requestURI.indexOf("/",1));

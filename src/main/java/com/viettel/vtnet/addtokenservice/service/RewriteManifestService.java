@@ -95,8 +95,23 @@ public class RewriteManifestService {
         updatedSegmentMap = Optional.of(SegmentMap.builder().from(sm).uri(urlWithToken).build());
       }
         //end-EXT-X-MAP
-
       //end-segment map
+      //partial segment list for audio
+        //X-PART
+      List<PartialSegment> partialSegmentList = segment.partialSegments();
+      List<PartialSegment> updatedPartialSegmentList = new ArrayList<>();
+      for (int j = 0; j < partialSegmentList.size(); j++) {
+        PartialSegment partialSegment = partialSegmentList.get(j);
+        //hash
+        String urlWithToken = generateUrl(baseUrl, requestParam, partialSegment.uri(),
+            urlSigConfig);
+        //end-hash
+        PartialSegment updatedPartialSegment = PartialSegment.builder().from(partialSegment)
+            .uri(urlWithToken).build();
+        updatedPartialSegmentList.add(updatedPartialSegment);
+      }
+        //end-X-PART
+      //end-partial segment list for audio
       //hash
       String urlWithToken = generateUrl(baseUrl, requestParam, segment.uri(), urlSigConfig);
       //end-hash
@@ -106,7 +121,9 @@ public class RewriteManifestService {
         updatedSegments.add(updatedMediaSegment);
         continue;
       }
-      MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment).uri(urlWithToken)
+      MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment)
+          .uri(urlWithToken)
+          .partialSegments(updatedPartialSegmentList)
           .build();
       updatedSegments.add(updatedMediaSegment);
     }

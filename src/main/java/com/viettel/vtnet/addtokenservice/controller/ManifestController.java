@@ -41,9 +41,10 @@ public class ManifestController {
   public ResponseEntity<?> getM3U8File(HttpServletRequest request, HttpServletResponse response,
      @PathVariable String filename,
      @RequestParam(required = false) String uid,
-     @RequestParam Long timestamp) {
+     @RequestParam Long timestamp, @RequestParam("url") String hashUrl) {
     Long startTime = System.currentTimeMillis();
     log.debug("getMediaPlaylist: " + request.getRequestURL().toString());
+    log.debug("url param:" + hashUrl);
     //response file name
     response.setHeader("Content-Disposition", "attachment; filename="+ filename + ".m3u8");
     /**URL and get m3u8 data*/
@@ -51,6 +52,9 @@ public class ManifestController {
     String domain = request.getRemoteHost();
     log.debug("remote host: " + domain +  " " + request.getRemoteAddr());
     String requestParam = request.getQueryString();
+    //remove host in request param
+    requestParam = requestParam.substring(0, requestParam.lastIndexOf('&'));
+
     String requestURI = request.getRequestURI();
     String clientServiceName = requestURI.substring(1, requestURI.indexOf("/",1));
     UrlSigConfig urlSigConfig = urlSigConfigPool.getUrlSigConfig(clientServiceName);
@@ -62,12 +66,18 @@ public class ManifestController {
         : getDataFromOriginService.getDataFromOriginHTTPS(url+ "?" + requestParam, false);
 
     log.debug("END get data from origin" + m3u8Data );
+    //get base url
+    String baseUrl = hashUrl + requestURI.substring(requestURI.indexOf('/', requestURI.indexOf('/')+1));
+    baseUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
+    log.debug("base url for gen token:" + baseUrl);
+
     if(getDataFromOriginService.isMasterPlaylist(m3u8Data)) {
       //master
       MasterPlaylist masterPlaylist = getDataFromOriginService.getMasterPlaylistFromOrigin(m3u8Data);
       masterPlaylist = rewriteManifestService.rewriteMasterPlaylist(
               masterPlaylist,
-              domain + requestURI,
+              baseUrl,
+              schema,
               requestParam,
               urlSigConfig);
       MasterPlaylistParser masterPlaylistParser = new MasterPlaylistParser();
@@ -81,7 +91,8 @@ public class ManifestController {
       MediaPlaylist mediaPlaylist = getDataFromOriginService.getMediaPlaylistFromOrigin(m3u8Data);
       mediaPlaylist = rewriteManifestService.rewriteMediaPlaylist(
               mediaPlaylist,
-              domain + requestURI,
+              baseUrl,
+              hashUrl,
               requestParam,
               urlSigConfig);
       MediaPlaylistParser mediaPlaylistParser = new MediaPlaylistParser();

@@ -32,6 +32,7 @@ public class RewriteManifestService {
   public MasterPlaylist rewriteMasterPlaylist(
       MasterPlaylist originMasterPlaylist,
       String baseUrl,
+      String schema,
       String requestParam,
       UrlSigConfig urlSigConfig
   ) {
@@ -41,7 +42,7 @@ public class RewriteManifestService {
     for (int i = 0; i < variants.size(); i++) {
       Variant v = variants.get(i);
       //hash
-      String urlWithToken = generateUrl(baseUrl, requestParam, v.uri(), urlSigConfig);
+      String urlWithToken = generateUrl(baseUrl, schema, requestParam, v.uri(), urlSigConfig);
       //end-hash
       Variant updatedVariant = Variant.builder().from(v).uri(urlWithToken).build();
       updatedVariants.add(updatedVariant);
@@ -55,7 +56,7 @@ public class RewriteManifestService {
       //hash
       String urlWithToken = "";
       if (ar.uri().isPresent()) {
-        urlWithToken = generateUrl(baseUrl, requestParam, ar.uri().get(), urlSigConfig);
+        urlWithToken = generateUrl(baseUrl, schema, requestParam, ar.uri().get(), urlSigConfig);
       }
       //end-hash
       AlternativeRendition updateAR = AlternativeRendition.builder().from(ar).uri(urlWithToken)
@@ -73,6 +74,7 @@ public class RewriteManifestService {
   public MediaPlaylist rewriteMediaPlaylist(
       MediaPlaylist originMediaPlaylist,
       String baseUrl,
+      String schema,
       String requestParam,
       UrlSigConfig urlSigConfig
   ) {
@@ -90,7 +92,7 @@ public class RewriteManifestService {
       if (segmentMap.isPresent()) {
         SegmentMap sm = segmentMap.get();
         //hash
-        String urlWithToken = generateUrl(baseUrl, requestParam, sm.uri(), urlSigConfig);
+        String urlWithToken = generateUrl(baseUrl, schema, requestParam, sm.uri(), urlSigConfig);
         //end-hash
         updatedSegmentMap = Optional.of(SegmentMap.builder().from(sm).uri(urlWithToken).build());
       }
@@ -103,7 +105,7 @@ public class RewriteManifestService {
       for (int j = 0; j < partialSegmentList.size(); j++) {
         PartialSegment partialSegment = partialSegmentList.get(j);
         //hash
-        String urlWithToken = generateUrl(baseUrl, requestParam, partialSegment.uri(),
+        String urlWithToken = generateUrl(baseUrl, schema, requestParam, partialSegment.uri(),
             urlSigConfig);
         //end-hash
         PartialSegment updatedPartialSegment = PartialSegment.builder().from(partialSegment)
@@ -113,7 +115,7 @@ public class RewriteManifestService {
         //end-X-PART
       //end-partial segment list for audio
       //hash
-      String urlWithToken = generateUrl(baseUrl, requestParam, segment.uri(), urlSigConfig);
+      String urlWithToken = generateUrl(baseUrl, schema, requestParam, segment.uri(), urlSigConfig);
       //end-hash
       if(updatedSegmentMap.isPresent()){
         MediaSegment updatedMediaSegment = MediaSegment.builder().from(segment).uri(urlWithToken)
@@ -134,7 +136,7 @@ public class RewriteManifestService {
     for (int i = 0; i < partialSegments.size(); i++) {
       PartialSegment partialSegment = partialSegments.get(i);
       //hash
-      String urlWithToken = generateUrl(baseUrl, requestParam, partialSegment.uri(), urlSigConfig);
+      String urlWithToken = generateUrl(baseUrl, schema, requestParam, partialSegment.uri(), urlSigConfig);
       //end-hash
       PartialSegment updatedPartialSegment = PartialSegment.builder().from(partialSegment)
           .uri(urlWithToken).build();
@@ -147,7 +149,7 @@ public class RewriteManifestService {
     if (preloadHints.isPresent()) {
       PreloadHint preloadHint = preloadHints.get();
       //hash
-      String urlWithToken = generateUrl(baseUrl, requestParam, preloadHint.uri(), urlSigConfig);
+      String urlWithToken = generateUrl(baseUrl, schema, requestParam, preloadHint.uri(), urlSigConfig);
       //end-hash
       updatedPreloadHints = Optional.of(PreloadHint.builder().from(preloadHint).uri(urlWithToken)
           .build());
@@ -159,7 +161,7 @@ public class RewriteManifestService {
     for (int i = 0; i < renditionReports.size(); i++) {
       RenditionReport renditionReport = renditionReports.get(i);
       //hash
-      String urlWithToken = generateUrl(baseUrl, requestParam, renditionReport.uri(),
+      String urlWithToken = generateUrl(baseUrl, schema, requestParam, renditionReport.uri(),
           urlSigConfig);
       //end-hash
       RenditionReport updatedRenditionReport = RenditionReport.builder().from(renditionReport)
@@ -186,7 +188,7 @@ public class RewriteManifestService {
    * <br>
    *
    * @param baseUrl:      base m3u8 url :
-   *                      (http://192.168.122.32/)foo/asdfasdf/adsf.m3u8?timestamp=213&uid=uid123&E=1703155339&A=1&K=4&P=1&S=608baf47ce4d76be52eb6488bce29f9ea4cfc2ed
+   *                      192.168.122.32/foo/asdfasdf/adsf.m3u8?timestamp=213&uid=uid123&E=1703155339&A=1&K=4&P=1&S=608baf47ce4d76be52eb6488bce29f9ea4cfc2ed
    * @param m3u8FileData: url in m3u8 file: 144p_index.m3u8?a=1&b=2 ||
    *                      https://cdnvt.net/hls-stream/test/144p_segment13102.ts?a=1&b=2
    * @param urlSigConfig: algorithm : HmacSHA1 <br>
@@ -194,8 +196,9 @@ public class RewriteManifestService {
    *   use parts : [false, false, true, true]<br>
    * list hash query param : [timestamp, uid]<br>
    */
-  private String generateUrl(String baseUrl, String requestParam, String m3u8FileData,
-      UrlSigConfig urlSigConfig) {
+  private String generateUrl(String baseUrl,String schema ,
+                             String requestParam, String m3u8FileData,
+                             UrlSigConfig urlSigConfig) {
 
     //remove query param in m3u8 file data
     if (m3u8FileData.contains("?")) {
@@ -206,12 +209,12 @@ public class RewriteManifestService {
     String usePath = UrlUtil.getUseParts(baseUrl, urlSigConfig.getUseParts());
     log.debug("usePath: " + usePath);
     //remove master.m3u8
-    usePath = usePath.substring(0, usePath.lastIndexOf("/"));
+//    usePath = usePath.substring(0, usePath.lastIndexOf("/"));
     /*get hash query param*/
     String hashQueryParam = UrlUtil.getHashQueryParamWithValue(requestParam,
         urlSigConfig.getHashQueryParams());
 
-    String hashData = usePath + "/" + m3u8FileData + "?" + hashQueryParam;
+    String hashData = usePath + m3u8FileData + "?" + hashQueryParam;
     //generate token
     //get key
     String token = generateToken(hashData, urlSigConfig.getKey(), urlSigConfig.getAlgorithm());
@@ -223,7 +226,9 @@ public class RewriteManifestService {
      * return MUST include all query param + new token
      * */
     //String schema = isHaveHttpSchema == 0 ? "" : (isHaveHttpSchema == 1 ? "http://" : "https://");
-    StringBuilder returnData = new StringBuilder(m3u8FileData)
+    StringBuilder returnData = new StringBuilder()
+            .append(baseUrl)
+            .append(m3u8FileData)
         .append("?")
         .append(requestParam)
         .append("&")
